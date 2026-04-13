@@ -1,24 +1,38 @@
-from flask import Flask
-from flask_cors import CORS
-from dotenv import load_dotenv
-import psycopg2
-import os
-
-load_dotenv()
-
-app = Flask(__name__)
-CORS(app)
+from flask import Flask, jsonify
+from config import Config
+from extensions import db, cors
+from routes import tasks_bp
+from models import Task
 
 
-def get_connection():
-    return psycopg2.connect(
-        host=os.getenv('DB_HOST'),
-        database=os.getenv('DB_NAME'),
-        user=os.getenv('DB_USER'),
-        password=os.getenv('DB_PASSWORD'),
-        port=os.getenv('DB_PORT')
+def create_app():
+    app = Flask(__name__)
+    app.config.from_object(Config)
+
+    db.init_app(app)
+    cors.init_app(app)
+
+    app.register_blueprint(tasks_bp)
+
+    @app.route("/")
+    def home():
+        return jsonify({"message": "Backend is running successfully"})
+
+    @app.route("/api/health", methods=["GET"])
+    def health():
+        return jsonify({"status": "ok"})
+
+    with app.app_context():
+        db.create_all()
+
+    return app
+
+
+app = create_app()
+
+if __name__ == "__main__":
+    app.run(
+        debug=Config.DEBUG,
+        host=Config.HOST,
+        port=Config.PORT
     )
-
-
-if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
