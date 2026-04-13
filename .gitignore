@@ -1,1 +1,6 @@
 .vscode/settings.json
+backend/services/__pycache__/__init__.cpython-312.pyc
+backend/routes/__pycache__/task_routes.cpython-312.pyc
+backend/routes/__pycache__/__init__.cpython-312.pyc
+backend/__pycache__/extensions.cpython-312.pyc
+backend/__pycache__/config.cpython-312.pyc
