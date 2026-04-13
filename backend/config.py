@@ -34,4 +34,4 @@ class Config:
     # 2- read the server host from .env, if the HOST missing use 0.0.0.0
     HOST = os.getenv("HOST", "0.0.0.0")
     # 3- read the port from .env then convert it to int
-    PORT = int(os.getenv("PORT, 5000"))
+    PORT = int(os.getenv("PORT", "5000"))
