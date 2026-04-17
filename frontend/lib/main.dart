@@ -55,7 +55,7 @@ class _TodoPageState extends State<TodoPage> {
 
   // Replace this with your laptop's real local IP address
   // Example: http://192.168.1.23:5000
-  static const String baseUrl = 'http://YOUR-PC-IP:5000';
+  static const String baseUrl = 'http://192.168.8.191:5000';
 
   @override
   void initState() {
