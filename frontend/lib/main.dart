@@ -1,7 +1,29 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
 void main() {
   runApp(const MyApp());
+}
+
+class Task {
+  final int id;
+  final String title;
+  final bool isDone;
+
+  Task({
+    required this.id,
+    required this.title,
+    required this.isDone,
+  });
+
+  factory Task.fromJson(Map<String, dynamic> json) {
+    return Task(
+      id: json['id'],
+      title: json['title'],
+      isDone: json['is_done'] ?? false,
+    );
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -9,9 +31,13 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
+    return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: TodoPage(),
+      title: 'My Todo App',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: const TodoPage(),
     );
   }
 }
@@ -24,23 +50,102 @@ class TodoPage extends StatefulWidget {
 }
 
 class _TodoPageState extends State<TodoPage> {
-  List<String> todos = [];
-
   final TextEditingController controller = TextEditingController();
 
-  void addTodo() {
-    if (controller.text.trim().isNotEmpty) {
-      setState(() {
-        todos.add(controller.text.trim());
-        controller.clear();
-      });
+  List<Task> todos = [];
+  bool isLoading = true;
+
+  // Choose ONE:
+  // Chrome / Windows desktop: http://127.0.0.1:5000
+  // Android emulator:        http://10.0.2.2:5000
+  static const String baseUrl = 'http://127.0.0.1:5000';
+
+  @override
+  void initState() {
+    super.initState();
+    fetchTodos();
+  }
+
+  Future<void> fetchTodos() async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/api/tasks'));
+
+      if (response.statusCode == 200) {
+        final List data = jsonDecode(response.body);
+        setState(() {
+          todos = data.map((item) => Task.fromJson(item)).toList();
+          isLoading = false;
+        });
+      } else {
+        setState(() => isLoading = false);
+        debugPrint('Fetch failed: ${response.body}');
+      }
+    } catch (e) {
+      setState(() => isLoading = false);
+      debugPrint('Fetch error: $e');
     }
   }
 
-  void deleteTodo(int index) {
-    setState(() {
-      todos.removeAt(index);
-    });
+  Future<void> addTodo() async {
+    final title = controller.text.trim();
+    if (title.isEmpty) return;
+
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/tasks'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'title': title}),
+      );
+
+      if (response.statusCode == 201) {
+        controller.clear();
+        await fetchTodos();
+      } else {
+        debugPrint('Add failed: ${response.body}');
+      }
+    } catch (e) {
+      debugPrint('Add error: $e');
+    }
+  }
+
+  Future<void> deleteTodo(int id) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('$baseUrl/api/tasks/$id'),
+      );
+
+      if (response.statusCode == 200) {
+        await fetchTodos();
+      } else {
+        debugPrint('Delete failed: ${response.body}');
+      }
+    } catch (e) {
+      debugPrint('Delete error: $e');
+    }
+  }
+
+  Future<void> toggleTodo(Task task) async {
+    try {
+      final response = await http.put(
+        Uri.parse('$baseUrl/api/tasks/${task.id}'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'is_done': !task.isDone}),
+      );
+
+      if (response.statusCode == 200) {
+        await fetchTodos();
+      } else {
+        debugPrint('Update failed: ${response.body}');
+      }
+    } catch (e) {
+      debugPrint('Update error: $e');
+    }
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
   }
 
   @override
@@ -69,6 +174,7 @@ class _TodoPageState extends State<TodoPage> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
+                    onSubmitted: (_) => addTodo(),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -86,29 +192,45 @@ class _TodoPageState extends State<TodoPage> {
             ),
           ),
           Expanded(
-            child: todos.isEmpty
-                ? const Center(
-                    child: Text(
-                      "No tasks yet 👀",
-                      style: TextStyle(fontSize: 18),
-                    ),
-                  )
-                : ListView.builder(
-                    itemCount: todos.length,
-                    itemBuilder: (context, index) {
-                      return Card(
-                        margin: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 6),
-                        child: ListTile(
-                          title: Text(todos[index]),
-                          trailing: IconButton(
-                            icon: const Icon(Icons.delete, color: Colors.red),
-                            onPressed: () => deleteTodo(index),
-                          ),
+            child: isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : todos.isEmpty
+                    ? const Center(
+                        child: Text(
+                          "No tasks yet 👀",
+                          style: TextStyle(fontSize: 18),
                         ),
-                      );
-                    },
-                  ),
+                      )
+                    : ListView.builder(
+                        itemCount: todos.length,
+                        itemBuilder: (context, index) {
+                          final task = todos[index];
+                          return Card(
+                            margin: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            child: ListTile(
+                              leading: Checkbox(
+                                value: task.isDone,
+                                onChanged: (_) => toggleTodo(task),
+                              ),
+                              title: Text(
+                                task.title,
+                                style: TextStyle(
+                                  decoration: task.isDone
+                                      ? TextDecoration.lineThrough
+                                      : TextDecoration.none,
+                                ),
+                              ),
+                              trailing: IconButton(
+                                icon: const Icon(Icons.delete, color: Colors.red),
+                                onPressed: () => deleteTodo(task.id),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
           ),
         ],
       ),
