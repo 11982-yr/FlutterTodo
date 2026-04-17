@@ -34,9 +34,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'My Todo App',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
+      theme: ThemeData(primarySwatch: Colors.blue),
       home: const TodoPage(),
     );
   }
@@ -55,10 +53,9 @@ class _TodoPageState extends State<TodoPage> {
   List<Task> todos = [];
   bool isLoading = true;
 
-  // Choose ONE:
-  // Chrome / Windows desktop: http://127.0.0.1:5000
-  // Android emulator:        http://10.0.2.2:5000
-  static const String baseUrl = 'http://127.0.0.1:5000';
+  // Replace this with your laptop's real local IP address
+  // Example: http://192.168.1.23:5000
+  static const String baseUrl = 'http://YOUR-PC-IP:5000';
 
   @override
   void initState() {
@@ -67,6 +64,8 @@ class _TodoPageState extends State<TodoPage> {
   }
 
   Future<void> fetchTodos() async {
+    setState(() => isLoading = true);
+
     try {
       final response = await http.get(Uri.parse('$baseUrl/api/tasks'));
 
@@ -78,7 +77,7 @@ class _TodoPageState extends State<TodoPage> {
         });
       } else {
         setState(() => isLoading = false);
-        debugPrint('Fetch failed: ${response.body}');
+        debugPrint('Fetch failed: ${response.statusCode} ${response.body}');
       }
     } catch (e) {
       setState(() => isLoading = false);
@@ -101,7 +100,7 @@ class _TodoPageState extends State<TodoPage> {
         controller.clear();
         await fetchTodos();
       } else {
-        debugPrint('Add failed: ${response.body}');
+        debugPrint('Add failed: ${response.statusCode} ${response.body}');
       }
     } catch (e) {
       debugPrint('Add error: $e');
@@ -117,7 +116,7 @@ class _TodoPageState extends State<TodoPage> {
       if (response.statusCode == 200) {
         await fetchTodos();
       } else {
-        debugPrint('Delete failed: ${response.body}');
+        debugPrint('Delete failed: ${response.statusCode} ${response.body}');
       }
     } catch (e) {
       debugPrint('Delete error: $e');
@@ -135,7 +134,7 @@ class _TodoPageState extends State<TodoPage> {
       if (response.statusCode == 200) {
         await fetchTodos();
       } else {
-        debugPrint('Update failed: ${response.body}');
+        debugPrint('Update failed: ${response.statusCode} ${response.body}');
       }
     } catch (e) {
       debugPrint('Update error: $e');
@@ -153,7 +152,7 @@ class _TodoPageState extends State<TodoPage> {
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
-        title: const Text("My Todo App"),
+        title: const Text('My Todo App'),
         centerTitle: true,
         backgroundColor: Colors.blue,
       ),
@@ -167,7 +166,7 @@ class _TodoPageState extends State<TodoPage> {
                   child: TextField(
                     controller: controller,
                     decoration: InputDecoration(
-                      hintText: "Enter a task...",
+                      hintText: 'Enter a task...',
                       filled: true,
                       fillColor: Colors.white,
                       border: OutlineInputBorder(
@@ -197,7 +196,7 @@ class _TodoPageState extends State<TodoPage> {
                 : todos.isEmpty
                     ? const Center(
                         child: Text(
-                          "No tasks yet 👀",
+                          'No tasks yet 👀',
                           style: TextStyle(fontSize: 18),
                         ),
                       )
