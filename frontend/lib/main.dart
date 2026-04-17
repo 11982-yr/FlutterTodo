@@ -55,9 +55,10 @@ class _TodoPageState extends State<TodoPage> {
   List<Task> _tasks = [];
   bool _isLoading = true;
 
-  // Change this to your PC's Wi-Fi IP
-  // Example: http://192.168.1.23:5000
-  static const String baseUrl = 'http://192.168.100.41:5000';
+  static const String baseUrl = String.fromEnvironment(
+  'API_BASE_URL',
+  defaultValue: 'http://10.0.2.2:5000',
+);
 
   @override
   void initState() {
