@@ -57,7 +57,7 @@ class _TodoPageState extends State<TodoPage> {
 
   // Change this to your PC's Wi-Fi IP
   // Example: http://192.168.1.23:5000
-  static const String baseUrl = 'http://YOUR-PC-IP:5000';
+  static const String baseUrl = 'http://192.168.100.41:5000';
 
   @override
   void initState() {
