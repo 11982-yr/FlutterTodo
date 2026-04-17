@@ -33,8 +33,10 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'My Todo App',
-      theme: ThemeData(primarySwatch: Colors.blue),
+      theme: ThemeData(
+        primarySwatch: Colors.deepPurple,
+        useMaterial3: true,
+      ),
       home: const TodoPage(),
     );
   }
@@ -48,45 +50,43 @@ class TodoPage extends StatefulWidget {
 }
 
 class _TodoPageState extends State<TodoPage> {
-  final TextEditingController controller = TextEditingController();
+  final TextEditingController _controller = TextEditingController();
 
-  List<Task> todos = [];
-  bool isLoading = true;
+  List<Task> _tasks = [];
+  bool _isLoading = true;
 
-  // Replace this with your laptop's real local IP address
+  // Change this to your PC's Wi-Fi IP
   // Example: http://192.168.1.23:5000
-  static const String baseUrl = 'http://192.168.8.191:5000';
+  static const String baseUrl = 'http://YOUR-PC-IP:5000';
 
   @override
   void initState() {
     super.initState();
-    fetchTodos();
+    fetchTasks();
   }
 
-  Future<void> fetchTodos() async {
-    setState(() => isLoading = true);
-
+  Future<void> fetchTasks() async {
     try {
       final response = await http.get(Uri.parse('$baseUrl/api/tasks'));
 
       if (response.statusCode == 200) {
         final List data = jsonDecode(response.body);
         setState(() {
-          todos = data.map((item) => Task.fromJson(item)).toList();
-          isLoading = false;
+          _tasks = data.map((item) => Task.fromJson(item)).toList();
+          _isLoading = false;
         });
       } else {
-        setState(() => isLoading = false);
+        setState(() => _isLoading = false);
         debugPrint('Fetch failed: ${response.statusCode} ${response.body}');
       }
     } catch (e) {
-      setState(() => isLoading = false);
+      setState(() => _isLoading = false);
       debugPrint('Fetch error: $e');
     }
   }
 
-  Future<void> addTodo() async {
-    final title = controller.text.trim();
+  Future<void> addTask() async {
+    final title = _controller.text.trim();
     if (title.isEmpty) return;
 
     try {
@@ -97,8 +97,8 @@ class _TodoPageState extends State<TodoPage> {
       );
 
       if (response.statusCode == 201) {
-        controller.clear();
-        await fetchTodos();
+        _controller.clear();
+        await fetchTasks();
       } else {
         debugPrint('Add failed: ${response.statusCode} ${response.body}');
       }
@@ -107,14 +107,14 @@ class _TodoPageState extends State<TodoPage> {
     }
   }
 
-  Future<void> deleteTodo(int id) async {
+  Future<void> deleteTask(int id) async {
     try {
       final response = await http.delete(
         Uri.parse('$baseUrl/api/tasks/$id'),
       );
 
       if (response.statusCode == 200) {
-        await fetchTodos();
+        await fetchTasks();
       } else {
         debugPrint('Delete failed: ${response.statusCode} ${response.body}');
       }
@@ -123,7 +123,7 @@ class _TodoPageState extends State<TodoPage> {
     }
   }
 
-  Future<void> toggleTodo(Task task) async {
+  Future<void> toggleTask(Task task) async {
     try {
       final response = await http.put(
         Uri.parse('$baseUrl/api/tasks/${task.id}'),
@@ -132,7 +132,7 @@ class _TodoPageState extends State<TodoPage> {
       );
 
       if (response.statusCode == 200) {
-        await fetchTodos();
+        await fetchTasks();
       } else {
         debugPrint('Update failed: ${response.statusCode} ${response.body}');
       }
@@ -143,95 +143,132 @@ class _TodoPageState extends State<TodoPage> {
 
   @override
   void dispose() {
-    controller.dispose();
+    _controller.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    final currentDay = days[DateTime.now().weekday - 1];
+
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
-        title: const Text('My Todo App'),
+        title: const Text("Todo App"),
         centerTitle: true,
-        backgroundColor: Colors.blue,
+        backgroundColor: Colors.white,
+        elevation: 0,
       ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: controller,
-                    decoration: InputDecoration(
-                      hintText: 'Enter a task...',
-                      filled: true,
-                      fillColor: Colors.white,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    spreadRadius: 2,
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _controller,
+                      decoration: const InputDecoration(
+                        hintText: "Add a new task...",
+                        border: InputBorder.none,
                       ),
+                      onSubmitted: (_) => addTask(),
                     ),
-                    onSubmitted: (_) => addTodo(),
                   ),
+                  IconButton(
+                    icon: const Icon(
+                      Icons.add_circle,
+                      color: Colors.deepPurple,
+                      size: 32,
+                    ),
+                    onPressed: addTask,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 30),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  "My Tasks",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
-                const SizedBox(width: 10),
-                ElevatedButton(
-                  onPressed: addTodo,
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.all(14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+                Text(
+                  currentDay,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
                   ),
-                  child: const Icon(Icons.add),
                 ),
               ],
             ),
-          ),
-          Expanded(
-            child: isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : todos.isEmpty
-                    ? const Center(
-                        child: Text(
-                          'No tasks yet 👀',
-                          style: TextStyle(fontSize: 18),
-                        ),
-                      )
-                    : ListView.builder(
-                        itemCount: todos.length,
-                        itemBuilder: (context, index) {
-                          final task = todos[index];
-                          return Card(
-                            margin: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
-                            ),
-                            child: ListTile(
-                              leading: Checkbox(
-                                value: task.isDone,
-                                onChanged: (_) => toggleTodo(task),
+            const SizedBox(height: 10),
+            Expanded(
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _tasks.isEmpty
+                      ? const Center(
+                          child: Text(
+                            "No tasks yet 👀",
+                            style: TextStyle(fontSize: 18),
+                          ),
+                        )
+                      : ListView.builder(
+                          itemCount: _tasks.length,
+                          itemBuilder: (context, index) {
+                            final task = _tasks[index];
+                            return Card(
+                              elevation: 0,
+                              color: Colors.white,
+                              margin: const EdgeInsets.only(bottom: 10),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
                               ),
-                              title: Text(
-                                task.title,
-                                style: TextStyle(
-                                  decoration: task.isDone
-                                      ? TextDecoration.lineThrough
-                                      : TextDecoration.none,
+                              child: ListTile(
+                                leading: Checkbox(
+                                  value: task.isDone,
+                                  onChanged: (_) => toggleTask(task),
+                                  activeColor: Colors.deepPurple,
+                                ),
+                                title: Text(
+                                  task.title,
+                                  style: TextStyle(
+                                    decoration: task.isDone
+                                        ? TextDecoration.lineThrough
+                                        : TextDecoration.none,
+                                    color: task.isDone ? Colors.grey : Colors.black,
+                                  ),
+                                ),
+                                trailing: IconButton(
+                                  icon: const Icon(
+                                    Icons.delete,
+                                    color: Colors.redAccent,
+                                  ),
+                                  onPressed: () => deleteTask(task.id),
                                 ),
                               ),
-                              trailing: IconButton(
-                                icon: const Icon(Icons.delete, color: Colors.red),
-                                onPressed: () => deleteTodo(task.id),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-          ),
-        ],
+                            );
+                          },
+                        ),
+            ),
+          ],
+        ),
       ),
     );
   }
