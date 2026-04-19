@@ -33,9 +33,17 @@ class _TodoPageState extends State<TodoPage> {
 
   @override
   Widget build(BuildContext context) {
+    
+    // --- Calendar logic --
+    DateTime now = DateTime.now();
+
     // Days of the week 
+    DateTime monday = now.subtract(Duration(days: now.weekday - 1));
     List<String> days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    String currentDay = days[DateTime.now().weekday - 1];
+    
+    // Fix: Define currentDay here so it can be used below
+    String currentDay = days[now.weekday - 1];
+    
     //-------------
 
     return Scaffold(
@@ -46,11 +54,67 @@ class _TodoPageState extends State<TodoPage> {
         backgroundColor: Colors.white,
         elevation: 0,
       ),
+
+      // AppBar
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+
+            // Horizontal Calendar here
+            SizedBox(
+              height: 100,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: 7,
+                itemBuilder: (context, index) {
+                  DateTime date = monday.add(Duration(days: index));
+                  bool isToday = date.day == now.day && date.month == now.month;
+
+                  return Column(
+                    children: [
+                      Container(
+                        width: 60,
+                        height: 60,
+                        margin: const EdgeInsets.symmetric(horizontal: 8),
+                        decoration: BoxDecoration(
+                          color: isToday ? Colors.deepPurple : Colors.white,
+                          borderRadius: BorderRadius.circular(isToday ? 15 : 30),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.05),
+                              blurRadius: 5,
+                            )
+                          ],
+                        ),
+                        child: Center(
+                          child: Text(
+                            "${date.day}",
+                            style: TextStyle(
+                              color: isToday ? Colors.white : Colors.black,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        days[index],
+                        style: TextStyle(
+                          color: isToday ? Colors.deepPurple : Colors.grey,
+                          fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
             // --- Upgraded Input Container ---
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -100,7 +164,7 @@ class _TodoPageState extends State<TodoPage> {
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 Text(
-                  currentDay,
+                  currentDay, // Fixed usage
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -113,31 +177,33 @@ class _TodoPageState extends State<TodoPage> {
 
             // --- The List of Tasks ---
             Expanded(
-              child: ListView.builder(
-                itemCount: _tasks.length,
-                itemBuilder: (context, index) {
-                  return Card(
-                    elevation: 0,
-                    color: Colors.white,
-                    margin: const EdgeInsets.only(bottom: 10),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: ListTile(
-                      title: Text(_tasks[index]),
-                      leading: const Icon(Icons.circle_outlined, color: Colors.deepPurple),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.delete, color: Colors.redAccent),
-                        onPressed: () {
-                          setState(() {
-                            _tasks.removeAt(index);
-                          });
-                        },
-                      ),
-                    ),
-                  );
-                },
-              ),
+              child: _tasks.isEmpty 
+                ? const Center(child: Text("No tasks yet!")) 
+                : ListView.builder(
+                    itemCount: _tasks.length,
+                    itemBuilder: (context, index) {
+                      return Card(
+                        elevation: 0,
+                        color: Colors.white,
+                        margin: const EdgeInsets.only(bottom: 10),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: ListTile(
+                          title: Text(_tasks[index]),
+                          leading: const Icon(Icons.circle_outlined, color: Colors.deepPurple),
+                          trailing: IconButton(
+                            icon: const Icon(Icons.delete, color: Colors.redAccent),
+                            onPressed: () {
+                              setState(() {
+                                _tasks.removeAt(index);
+                              });
+                            },
+                          ),
+                        ),
+                      );
+                    },
+                  ),
             ),
           ],
         ),
