@@ -86,7 +86,8 @@ class _TodoPageState extends State<TodoPage> {
   List<Task> _tasks = [];
   bool _isLoading = true;
 
-  // Change this if needed
+  // For Android emulator, use: http://10.0.2.2:5000
+  // For physical device, use your PC's local IP
   static const String baseUrl = 'http://10.61.11.171:5000';
 
   @override
@@ -102,7 +103,9 @@ class _TodoPageState extends State<TodoPage> {
   }
 
   Future<void> fetchTasks() async {
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+    });
 
     try {
       final response = await http
@@ -116,11 +119,15 @@ class _TodoPageState extends State<TodoPage> {
           _isLoading = false;
         });
       } else {
-        setState(() => _isLoading = false);
+        setState(() {
+          _isLoading = false;
+        });
         debugPrint('Fetch failed: ${response.statusCode}');
       }
     } catch (e) {
-      setState(() => _isLoading = false);
+      setState(() {
+        _isLoading = false;
+      });
       debugPrint('Fetch error: $e');
     }
   }
@@ -136,7 +143,7 @@ class _TodoPageState extends State<TodoPage> {
         body: jsonEncode({'title': text}),
       );
 
-      if (response.statusCode == 201 || response.statusCode == 200) {
+      if (response.statusCode == 200 || response.statusCode == 201) {
         _controller.clear();
         await fetchTasks();
       } else {
@@ -186,153 +193,164 @@ class _TodoPageState extends State<TodoPage> {
           ),
         ],
       ),
-      body: RefreshIndicator(
-        onRefresh: fetchTasks,
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
+      body: SafeArea(
+        child: Padding(
           padding: const EdgeInsets.all(16.0),
-          child: SizedBox(
-            height: MediaQuery.of(context).size.height - 120,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Weekly Calendar
-                SizedBox(
-                  height: 100,
-                  child: ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: 7,
-                    itemBuilder: (context, index) {
-                      final DateTime date = monday.add(Duration(days: index));
-                      final bool isToday =
-                          date.day == now.day &&
-                          date.month == now.month &&
-                          date.year == now.year;
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                height: 100,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: 7,
+                  itemBuilder: (context, index) {
+                    final DateTime date = monday.add(Duration(days: index));
+                    final bool isToday =
+                        date.day == now.day &&
+                        date.month == now.month &&
+                        date.year == now.year;
 
-                      return Column(
-                        children: [
-                          Container(
-                            width: 60,
-                            height: 60,
-                            margin: const EdgeInsets.symmetric(horizontal: 8),
-                            decoration: BoxDecoration(
-                              color: isToday
-                                  ? Colors.deepPurple
-                                  : Theme.of(context).cardColor,
-                              borderRadius: BorderRadius.circular(
-                                isToday ? 16 : 30,
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.06),
-                                  blurRadius: 8,
-                                ),
-                              ],
+                    return Column(
+                      children: [
+                        Container(
+                          width: 60,
+                          height: 60,
+                          margin: const EdgeInsets.symmetric(horizontal: 8),
+                          decoration: BoxDecoration(
+                            color: isToday
+                                ? Colors.deepPurple
+                                : Theme.of(context).cardColor,
+                            borderRadius: BorderRadius.circular(
+                              isToday ? 16 : 30,
                             ),
-                            child: Center(
-                              child: Text(
-                                '${date.day}',
-                                style: TextStyle(
-                                  color: isToday
-                                      ? Colors.white
-                                      : Theme.of(context)
-                                          .textTheme
-                                          .bodyLarge
-                                          ?.color,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 18,
-                                ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.06),
+                                blurRadius: 8,
+                              ),
+                            ],
+                          ),
+                          child: Center(
+                            child: Text(
+                              '${date.day}',
+                              style: TextStyle(
+                                color: isToday
+                                    ? Colors.white
+                                    : Theme.of(context)
+                                        .textTheme
+                                        .bodyLarge
+                                        ?.color,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
                               ),
                             ),
                           ),
-                          const SizedBox(height: 8),
-                          Text(
-                            days[index],
-                            style: TextStyle(
-                              color: isToday ? Colors.deepPurple : Colors.grey,
-                              fontWeight: isToday
-                                  ? FontWeight.bold
-                                  : FontWeight.normal,
-                            ),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                ),
-
-                const SizedBox(height: 20),
-
-                // Input box
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).cardColor,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 10,
-                        spreadRadius: 2,
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _controller,
-                          onSubmitted: (_) => addTask(),
-                          decoration: const InputDecoration(
-                            hintText: 'Add a new task...',
-                            border: InputBorder.none,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          days[index],
+                          style: TextStyle(
+                            color: isToday ? Colors.deepPurple : Colors.grey,
+                            fontWeight: isToday
+                                ? FontWeight.bold
+                                : FontWeight.normal,
                           ),
                         ),
-                      ),
-                      IconButton(
-                        icon: const Icon(
-                          Icons.add_circle,
-                          color: Colors.deepPurple,
-                          size: 32,
-                        ),
-                        onPressed: addTask,
-                      ),
-                    ],
-                  ),
+                      ],
+                    );
+                  },
                 ),
-
-                const SizedBox(height: 24),
-
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'My Tasks',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    Text(
-                      currentDay,
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.deepPurple[300],
-                      ),
+              ),
+              const SizedBox(height: 20),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).cardColor,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      spreadRadius: 2,
                     ),
                   ],
                 ),
-
-                const SizedBox(height: 12),
-
-                Expanded(
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _controller,
+                        onSubmitted: (_) => addTask(),
+                        decoration: const InputDecoration(
+                          hintText: 'Add a new task...',
+                          border: InputBorder.none,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(
+                        Icons.add_circle,
+                        color: Colors.deepPurple,
+                        size: 32,
+                      ),
+                      onPressed: addTask,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'My Tasks',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    currentDay,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.deepPurple,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Expanded(
+                child: RefreshIndicator(
+                  onRefresh: fetchTasks,
                   child: _isLoading
-                      ? const Center(child: CircularProgressIndicator())
+                      ? ListView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          children: const [
+                            SizedBox(
+                              height: 300,
+                              child: Center(
+                                child: CircularProgressIndicator(),
+                              ),
+                            ),
+                          ],
+                        )
                       : _tasks.isEmpty
-                          ? const Center(child: Text('No tasks yet!'))
+                          ? ListView(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              children: const [
+                                SizedBox(
+                                  height: 300,
+                                  child: Center(
+                                    child: Text('No tasks yet!'),
+                                  ),
+                                ),
+                              ],
+                            )
                           : ListView.builder(
+                              physics: const AlwaysScrollableScrollPhysics(),
                               itemCount: _tasks.length,
                               itemBuilder: (context, index) {
                                 final task = _tasks[index];
@@ -365,8 +383,8 @@ class _TodoPageState extends State<TodoPage> {
                               },
                             ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
