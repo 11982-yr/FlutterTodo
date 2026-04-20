@@ -55,10 +55,7 @@ class _TodoPageState extends State<TodoPage> {
   List<Task> _tasks = [];
   bool _isLoading = true;
 
-  static const String baseUrl = String.fromEnvironment(
-  'API_BASE_URL',
-  defaultValue: 'http://10.0.2.2:5000',
-);
+static const String baseUrl = 'http://10.61.11.171:5000';
 
   @override
   void initState() {
