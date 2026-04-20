@@ -11,10 +11,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false, // Removes the "debug" banner
-      theme: ThemeData(
-        primarySwatch: Colors.deepPurple,
-        useMaterial3: true,
-      ),
+      theme: ThemeData(primarySwatch: Colors.deepPurple, useMaterial3: true),
       home: const TodoPage(),
     );
   }
@@ -33,17 +30,16 @@ class _TodoPageState extends State<TodoPage> {
 
   @override
   Widget build(BuildContext context) {
-    
     // --- Calendar logic --
     DateTime now = DateTime.now();
 
-    // Days of the week 
+    // Days of the week
     DateTime monday = now.subtract(Duration(days: now.weekday - 1));
     List<String> days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    
+
     // Fix: Define currentDay here so it can be used below
     String currentDay = days[now.weekday - 1];
-    
+
     //-------------
 
     return Scaffold(
@@ -61,7 +57,6 @@ class _TodoPageState extends State<TodoPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-
             // Horizontal Calendar here
             SizedBox(
               height: 100,
@@ -71,7 +66,7 @@ class _TodoPageState extends State<TodoPage> {
                 itemBuilder: (context, index) {
                   DateTime date = monday.add(Duration(days: index));
                   bool isToday = date.day == now.day && date.month == now.month;
-
+                  
                   return Column(
                     children: [
                       Container(
@@ -80,12 +75,14 @@ class _TodoPageState extends State<TodoPage> {
                         margin: const EdgeInsets.symmetric(horizontal: 8),
                         decoration: BoxDecoration(
                           color: isToday ? Colors.deepPurple : Colors.white,
-                          borderRadius: BorderRadius.circular(isToday ? 15 : 30),
+                          borderRadius: BorderRadius.circular(
+                            isToday ? 15 : 30,
+                          ),
                           boxShadow: [
                             BoxShadow(
                               color: Colors.black.withOpacity(0.05),
                               blurRadius: 5,
-                            )
+                            ),
                           ],
                         ),
                         child: Center(
@@ -104,7 +101,9 @@ class _TodoPageState extends State<TodoPage> {
                         days[index],
                         style: TextStyle(
                           color: isToday ? Colors.deepPurple : Colors.grey,
-                          fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
+                          fontWeight: isToday
+                              ? FontWeight.bold
+                              : FontWeight.normal,
                         ),
                       ),
                     ],
@@ -141,7 +140,11 @@ class _TodoPageState extends State<TodoPage> {
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.add_circle, color: Colors.deepPurple, size: 32),
+                    icon: const Icon(
+                      Icons.add_circle,
+                      color: Colors.deepPurple,
+                      size: 32,
+                    ),
                     onPressed: () {
                       setState(() {
                         if (_controller.text.isNotEmpty) {
@@ -154,7 +157,7 @@ class _TodoPageState extends State<TodoPage> {
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 30),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -177,33 +180,39 @@ class _TodoPageState extends State<TodoPage> {
 
             // --- The List of Tasks ---
             Expanded(
-              child: _tasks.isEmpty 
-                ? const Center(child: Text("No tasks yet!")) 
-                : ListView.builder(
-                    itemCount: _tasks.length,
-                    itemBuilder: (context, index) {
-                      return Card(
-                        elevation: 0,
-                        color: Colors.white,
-                        margin: const EdgeInsets.only(bottom: 10),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: ListTile(
-                          title: Text(_tasks[index]),
-                          leading: const Icon(Icons.circle_outlined, color: Colors.deepPurple),
-                          trailing: IconButton(
-                            icon: const Icon(Icons.delete, color: Colors.redAccent),
-                            onPressed: () {
-                              setState(() {
-                                _tasks.removeAt(index);
-                              });
-                            },
+              child: _tasks.isEmpty
+                  ? const Center(child: Text("No tasks yet!"))
+                  : ListView.builder(
+                      itemCount: _tasks.length,
+                      itemBuilder: (context, index) {
+                        return Card(
+                          elevation: 0,
+                          color: Colors.white,
+                          margin: const EdgeInsets.only(bottom: 10),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                        ),
-                      );
-                    },
-                  ),
+                          child: ListTile(
+                            title: Text(_tasks[index]),
+                            leading: const Icon(
+                              Icons.circle_outlined,
+                              color: Colors.deepPurple,
+                            ),
+                            trailing: IconButton(
+                              icon: const Icon(
+                                Icons.delete,
+                                color: Colors.redAccent,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _tasks.removeAt(index);
+                                });
+                              },
+                            ),
+                          ),
+                        );
+                      },
+                    ),
             ),
           ],
         ),
