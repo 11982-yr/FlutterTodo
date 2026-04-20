@@ -33,10 +33,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primarySwatch: Colors.deepPurple,
-        useMaterial3: true,
-      ),
+      theme: ThemeData(primarySwatch: Colors.deepPurple, useMaterial3: true),
       home: const TodoPage(),
     );
   }
@@ -55,7 +52,7 @@ class _TodoPageState extends State<TodoPage> {
   List<Task> _tasks = [];
   bool _isLoading = true;
 
-static const String baseUrl = 'http://10.61.11.171:5000';
+  static const String baseUrl = 'http://10.61.11.171:5000';
 
   @override
   void initState() {
@@ -64,18 +61,21 @@ static const String baseUrl = 'http://10.61.11.171:5000';
   }
 
   Future<void> fetchTasks() async {
+    setState(() => _isLoading = true);
+
     try {
-      final response = await http.get(Uri.parse('$baseUrl/api/tasks'));
+      final response = await http
+          .get(Uri.parse('$baseUrl/api/tasks'))
+          .timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final List data = jsonDecode(response.body);
         setState(() {
-          _tasks = data.map((item) => Task.fromJson(item)).toList();
+          _tasks = data.map((e) => Task.fromJson(e)).toList();
           _isLoading = false;
         });
       } else {
         setState(() => _isLoading = false);
-        debugPrint('Fetch failed: ${response.statusCode} ${response.body}');
       }
     } catch (e) {
       setState(() => _isLoading = false);
@@ -84,21 +84,19 @@ static const String baseUrl = 'http://10.61.11.171:5000';
   }
 
   Future<void> addTask() async {
-    final title = _controller.text.trim();
-    if (title.isEmpty) return;
+    final text = _controller.text.trim();
+    if (text.isEmpty) return;
 
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/api/tasks'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'title': title}),
+        body: jsonEncode({'title': text}),
       );
 
       if (response.statusCode == 201) {
         _controller.clear();
-        await fetchTasks();
-      } else {
-        debugPrint('Add failed: ${response.statusCode} ${response.body}');
+        fetchTasks();
       }
     } catch (e) {
       debugPrint('Add error: $e');
@@ -107,48 +105,23 @@ static const String baseUrl = 'http://10.61.11.171:5000';
 
   Future<void> deleteTask(int id) async {
     try {
-      final response = await http.delete(
-        Uri.parse('$baseUrl/api/tasks/$id'),
-      );
+      final response =
+          await http.delete(Uri.parse('$baseUrl/api/tasks/$id'));
 
       if (response.statusCode == 200) {
-        await fetchTasks();
-      } else {
-        debugPrint('Delete failed: ${response.statusCode} ${response.body}');
+        fetchTasks();
       }
     } catch (e) {
       debugPrint('Delete error: $e');
     }
   }
 
-  Future<void> toggleTask(Task task) async {
-    try {
-      final response = await http.put(
-        Uri.parse('$baseUrl/api/tasks/${task.id}'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'is_done': !task.isDone}),
-      );
-
-      if (response.statusCode == 200) {
-        await fetchTasks();
-      } else {
-        debugPrint('Update failed: ${response.statusCode} ${response.body}');
-      }
-    } catch (e) {
-      debugPrint('Update error: $e');
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
   @override
   Widget build(BuildContext context) {
-    final days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    final currentDay = days[DateTime.now().weekday - 1];
+    DateTime now = DateTime.now();
+    DateTime monday = now.subtract(Duration(days: now.weekday - 1));
+    List<String> days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    String currentDay = days[now.weekday - 1];
 
     return Scaffold(
       backgroundColor: Colors.grey[100],
@@ -156,115 +129,101 @@ static const String baseUrl = 'http://10.61.11.171:5000';
         title: const Text("Todo App"),
         centerTitle: true,
         backgroundColor: Colors.white,
-        elevation: 0,
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                    spreadRadius: 2,
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _controller,
-                      decoration: const InputDecoration(
-                        hintText: "Add a new task...",
-                        border: InputBorder.none,
+            SizedBox(
+              height: 100,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: 7,
+                itemBuilder: (context, index) {
+                  DateTime date = monday.add(Duration(days: index));
+                  bool isToday =
+                      date.day == now.day && date.month == now.month;
+
+                  return Column(
+                    children: [
+                      Container(
+                        width: 60,
+                        height: 60,
+                        margin: const EdgeInsets.symmetric(horizontal: 8),
+                        decoration: BoxDecoration(
+                          color:
+                              isToday ? Colors.deepPurple : Colors.white,
+                          borderRadius:
+                              BorderRadius.circular(isToday ? 15 : 30),
+                        ),
+                        child: Center(
+                          child: Text(
+                            "${date.day}",
+                            style: TextStyle(
+                              color: isToday
+                                  ? Colors.white
+                                  : Colors.black,
+                            ),
+                          ),
+                        ),
                       ),
-                      onSubmitted: (_) => addTask(),
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(
-                      Icons.add_circle,
-                      color: Colors.deepPurple,
-                      size: 32,
-                    ),
-                    onPressed: addTask,
-                  ),
-                ],
+                      const SizedBox(height: 5),
+                      Text(days[index]),
+                    ],
+                  );
+                },
               ),
             ),
-            const SizedBox(height: 30),
+
+            const SizedBox(height: 20),
+
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _controller,
+                    decoration: const InputDecoration(
+                        hintText: "Add a task"),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.add),
+                  onPressed: addTask,
+                )
+              ],
+            ),
+
+            const SizedBox(height: 20),
+
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  "My Tasks",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                Text(
-                  currentDay,
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                const Text("My Tasks"),
+                Text(currentDay),
               ],
             ),
+
             const SizedBox(height: 10),
+
             Expanded(
               child: _isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : _tasks.isEmpty
-                      ? const Center(
-                          child: Text(
-                            "No tasks yet 👀",
-                            style: TextStyle(fontSize: 18),
-                          ),
-                        )
+                      ? const Center(child: Text("No tasks"))
                       : ListView.builder(
                           itemCount: _tasks.length,
-                          itemBuilder: (context, index) {
-                            final task = _tasks[index];
-                            return Card(
-                              elevation: 0,
-                              color: Colors.white,
-                              margin: const EdgeInsets.only(bottom: 10),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: ListTile(
-                                leading: Checkbox(
-                                  value: task.isDone,
-                                  onChanged: (_) => toggleTask(task),
-                                  activeColor: Colors.deepPurple,
-                                ),
-                                title: Text(
-                                  task.title,
-                                  style: TextStyle(
-                                    decoration: task.isDone
-                                        ? TextDecoration.lineThrough
-                                        : TextDecoration.none,
-                                    color: task.isDone ? Colors.grey : Colors.black,
-                                  ),
-                                ),
-                                trailing: IconButton(
-                                  icon: const Icon(
-                                    Icons.delete,
-                                    color: Colors.redAccent,
-                                  ),
-                                  onPressed: () => deleteTask(task.id),
-                                ),
+                          itemBuilder: (context, i) {
+                            final t = _tasks[i];
+                            return ListTile(
+                              title: Text(t.title),
+                              trailing: IconButton(
+                                icon: const Icon(Icons.delete),
+                                onPressed: () => deleteTask(t.id),
                               ),
                             );
                           },
                         ),
-            ),
+            )
           ],
         ),
       ),
